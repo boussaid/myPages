@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="utf-8"?>
+<addon addon_id="myPages" title="صفحاتي" version_string="1.0" version_id="1" url="http://www.shababadrar.net/vb/" install_callback_class="Mypages_Setup" install_callback_method="install" uninstall_callback_class="Mypages_Setup" uninstall_callback_method="uninstall">
+  <admin_navigation>
+    <navigation navigation_id="myPages" parent_navigation_id="mypageshr" display_order="10" link="my-pages" admin_permission_id="mypages" debug_only="0" hide_no_children="0"/>
+    <navigation navigation_id="myPagesOptions" parent_navigation_id="mypageshr" display_order="20" link="options/list/myPages" admin_permission_id="mypages" debug_only="0" hide_no_children="0"/>
+    <navigation navigation_id="mypageshr" parent_navigation_id="setup" display_order="90" link="" admin_permission_id="" debug_only="0" hide_no_children="1"/>
+  </admin_navigation>
+  <admin_permissions>
+    <admin_permission admin_permission_id="mypages" display_order="1000"/>
+  </admin_permissions>
+  <admin_style_properties/>
+  <admin_templates>
+    <template title="about_mypages"><![CDATA[<xen:checkboxunit label="{$preparedOption.title}" hint="{$preparedOption.hint}">
+<xen:explain>{xen:raw $preparedOption.explain}</xen:explain>
+	<xen:html>
+<span style="text-align:center; margin: 0 auto;">
+<img src="styles/default/xenforo/smilies/thumbsup.png"  alt='' />&nbsp;  
+<a href="https://github.com/boussaid" target="_blank" class="Tooltip" title="برمجة بوسعيد مصطفى">My github</a> &nbsp;
+<img src="styles/default/xenforo/smilies/thumbsup.png"  alt='' />
+</span>
+<xen:comment>
+<input type="hidden" name="{$listedFieldName}" value="{$preparedOption.option_id}" />
+		{xen:raw $editLink}
+		</xen:comment>
+</xen:html>	
+</xen:checkboxunit>]]></template>
+    <template title="my_page_delete"><![CDATA[<xen:title>{xen:phrase please_confirm_that_you_want_to_delete_following_page}: {$site.site_title}</xen:title>
+<xen:h1>{xen:phrase confirm_deletion_of_page}</xen:h1>
+
+<xen:navigation>
+	<xen:breadcrumb href="{xen:adminlink 'my-pages/edit', $page}">{$page.title}</xen:breadcrumb>
+</xen:navigation>
+
+<xen:require css="public:delete_confirmation.css" />
+
+<xen:form action="{xen:adminlink 'my-pages/delete', $page}" class="deleteConfirmForm formOverlay">
+	<p>{xen:phrase please_confirm_that_you_want_to_delete_following_page}:</p>
+	<strong><a href="{xen:adminlink 'my-pages/edit', $page}">{$page.title}</a></strong>
+
+	<xen:submitunit save="{xen:phrase delete_page}" />
+	<input type="hidden" name="_xfConfirm" value="1" />
+</xen:form>]]></template>
+    <template title="my_page_edit"><![CDATA[<xen:title>{xen:if {$page.page_id}, '{xen:phrase edit_page}: {$page.title}', '{xen:phrase create_new_page}'}</xen:title>
+
+<xen:if is="{$page.page_id}">
+	<xen:navigation>
+		<xen:breadcrumb href="{xen:adminlink my-pages}#{xen:helper listitemid, $page.page_id}">{$page.title}</xen:breadcrumb>
+	</xen:navigation>
+</xen:if>
+
+<xen:form action="{xen:adminlink 'my-pages/save', $page}"
+	class="AutoValidator"
+	data-redirect="yes"
+>
+	
+	<xen:textboxunit name="title" value="{$title}" label="{xen:phrase title}:" data-livetitletemplate="{xen:if {$page.page_id},
+		'{xen:phrase edit_page}: <em>%s</em>',
+		'{xen:phrase create_new_page}: <em>%s</em>'}"
+	/>
+	
+	<xen:textboxunit name="description" value="{$description}" label="{xen:phrase description}:" />
+	
+	<xen:textboxunit name="new_page_name" value="{$page.page_name}" label="{xen:phrase url_portion}:">
+		<xen:explain>{xen:phrase mypages_part_identify_page}</xen:explain>
+	</xen:textboxunit>
+
+	<xen:spinboxunit label="{xen:phrase display_order}:" name="display_order" value="{$page.display_order}" min="0" step="1" />
+
+	<xen:textboxunit name="content" value="{$template.template}" label="{xen:phrase page_content}:" hint="{xen:phrase you_may_use_html}" code="true" rows="10" inputclass="Elastic OptOut">
+		<xen:explain>{xen:phrase you_may_use_xenforo_template_syntax_here}</xen:explain>
+	</xen:textboxunit>
+				
+	<xen:require css="code_event.css" />
+	<xen:controlunit label="{xen:phrase php_callback}:">
+		<xen:textbox placeholder="{xen:phrase class}" name="callback_class" value="{$page.callback_class}" size="25" maxlength="75" />
+		::
+		<xen:textbox placeholder="{xen:phrase method}" name="callback_method" value="{$page.callback_method}" size="25" maxlength="75" />
+		<div class="eventDescription baseHtml">{xen:phrase page_callback_explanation_html}</div>
+	</xen:controlunit>
+
+	<xen:submitunit save="{xen:phrase save_page}">
+		<xen:if is="{$page.page_id}">
+			<input type="button" value="{xen:phrase delete_page}..." accesskey="d" class="button OverlayTrigger"
+				data-href="{xen:adminlink my-pages/delete, $page}" />
+		</xen:if>
+	</xen:submitunit>
+
+</xen:form>]]></template>
+    <template title="my_page_list"><![CDATA[<xen:title>{$xenOptions.tabTitle}</xen:title>
+
+<xen:topctrl>
+	<a href="{xen:adminlink my-pages/add}" class="button">+ {xen:phrase create_new_page}</a>
+</xen:topctrl>
+
+<xen:require css="filter_list.css" />
+<xen:require js="js/xenforo/filter_list.js" />
+
+<xen:form action="{xen:adminlink my-pages}" class="section AutoValidator">
+	
+	<xen:if is="{$pages}">
+	
+		<h2 class="subHeading">
+			<xen:include template="filter_list_controls" />
+			{xen:phrase my_pages}
+		</h2>
+
+		<ol class="FilterList">
+		<xen:foreach loop="$pages" value="$page">
+			<xen:listitem
+				id="{$page.page_id}"
+				label="{$page.title}"
+				href="{xen:adminlink my-pages/edit, $page}"
+				snippet="{$page.description}"
+				delete="{xen:adminlink my-pages/delete, $page}"
+			/>
+		</xen:foreach>
+		</ol>
+	
+		<p class="sectionFooter">{xen:phrase showing_x_of_y_items, 'count=<span class="FilterListCount">{xen:count $pages}</span>', 'total={xen:count $pages}'}</p>
+	
+	<xen:else />
+		<div class="noResults">{xen:phrase no_items_have_been_created_yet}</div>
+	</xen:if>
+	
+</xen:form>]]></template>
+  </admin_templates>
+  <admin_template_modifications/>
+  <code_events/>
+  <code_event_listeners>
+    <listener event_id="navigation_tabs" execute_order="10" callback_class="Mypages_Listeners_Navigation" callback_method="getTabs" active="1" hint="" description=""/>
+  </code_event_listeners>
+  <cron/>
+  <email_templates/>
+  <email_template_modifications/>
+  <optiongroups>
+    <group group_id="myPages" display_order="10000000" debug_only="0"/>
+    <option option_id="abouteme" edit_format="template" data_type="string" can_backup="1">
+      <default_value></default_value>
+      <edit_format_params>about_mypages</edit_format_params>
+      <sub_options></sub_options>
+      <relation group_id="myPages" display_order="10000"/>
+    </option>
+    <option option_id="menuTitle" edit_format="textbox" data_type="string" can_backup="1">
+      <default_value>المحتويات</default_value>
+      <edit_format_params>size=30</edit_format_params>
+      <sub_options></sub_options>
+      <relation group_id="myPages" display_order="100"/>
+    </option>
+    <option option_id="selectTemplate" edit_format="radio" data_type="string" can_backup="1">
+      <default_value>mypages_wrapper</default_value>
+      <edit_format_params>mypages_wrapper=صفحات بقائمة عمودية
+mypages_Hwrapper=صفحات بقائمة أفقية</edit_format_params>
+      <sub_options></sub_options>
+      <relation group_id="myPages" display_order="200"/>
+    </option>
+    <option option_id="showMembers" edit_format="onoff" data_type="boolean" can_backup="1">
+      <default_value>0</default_value>
+      <edit_format_params></edit_format_params>
+      <sub_options></sub_options>
+      <relation group_id="myPages" display_order="130"/>
+    </option>
+    <option option_id="showSide" edit_format="onoff" data_type="boolean" can_backup="1">
+      <default_value>0</default_value>
+      <edit_format_params></edit_format_params>
+      <sub_options></sub_options>
+      <relation group_id="myPages" display_order="110"/>
+    </option>
+    <option option_id="showThreads" edit_format="onoff" data_type="boolean" can_backup="1">
+      <default_value>0</default_value>
+      <edit_format_params></edit_format_params>
+      <sub_options></sub_options>
+      <relation group_id="myPages" display_order="120"/>
+    </option>
+    <option option_id="tabPosition" edit_format="select" data_type="string" can_backup="1">
+      <default_value>home</default_value>
+      <edit_format_params>home=البداية
+middle=الوسط
+end=النهاية</edit_format_params>
+      <sub_options></sub_options>
+      <relation group_id="myPages" display_order="20"/>
+    </option>
+    <option option_id="tabTitle" edit_format="textbox" data_type="string" can_backup="1">
+      <default_value>صفحاتي</default_value>
+      <edit_format_params>size=30</edit_format_params>
+      <sub_options></sub_options>
+      <relation group_id="myPages" display_order="1"/>
+    </option>
+  </optiongroups>
+  <permissions>
+    <permission_groups/>
+    <permissions/>
+    <interface_groups/>
+  </permissions>
+  <phrases>
+    <phrase title="admin_navigation_myPages" version_id="1" version_string="1.0"><![CDATA[إدارة صفحاتي]]></phrase>
+    <phrase title="admin_navigation_mypageshr" version_id="1" version_string="1.0"><![CDATA[صفحات مخصصة]]></phrase>
+    <phrase title="admin_navigation_myPagesOptions" version_id="1" version_string="1.0"><![CDATA[خيارات صفحاتي]]></phrase>
+    <phrase title="admin_permission_mypages" version_id="1" version_string="1.0"><![CDATA[إدارة صفحاتي]]></phrase>
+    <phrase title="mypages_part_identify_page" version_id="1" version_string="1.0"><![CDATA[حدد الجزء الفريد للرابط الخاص بالصفحة و الذي يأتي بعد الرابط الرئيسي لصفحاتي.
+<br />
+لا تستخدم حروف عربية، يمكنك استخدام a-z, 0-9, _ و - و حروف فقط.]]></phrase>
+    <phrase title="my_pages" version_id="1" version_string="1.0"><![CDATA[صفحاتي]]></phrase>
+    <phrase title="option_abouteme" version_id="1" version_string="1.0"><![CDATA[حول الهاك]]></phrase>
+    <phrase title="option_abouteme_explain" version_id="1" version_string="1.0"><![CDATA[]]></phrase>
+    <phrase title="option_group_myPages" version_id="1" version_string="1.0"><![CDATA[خيارات صفحاتي]]></phrase>
+    <phrase title="option_group_myPages_description" version_id="1" version_string="1.0"><![CDATA[صفحاتي عبارة عن إضافة للتحكم بصفحات مخصصة تعرض بتنسيق HTML و باستخدلم نظام قوالب و عبارات المنتدى. إن أردت حذف الهاك لا تنسى حذف كل الصفحات قبل الحذف النهائي للهاك.]]></phrase>
+    <phrase title="option_menuTitle" version_id="1" version_string="1.0"><![CDATA[عنوان القائمة]]></phrase>
+    <phrase title="option_menuTitle_explain" version_id="1" version_string="1.0"><![CDATA[العنوان الذي سيعرض في أعلى القائمة الجانبية أو الأفقية]]></phrase>
+    <phrase title="option_selectTemplate" version_id="1" version_string="1.0"><![CDATA[طريقة العرض]]></phrase>
+    <phrase title="option_selectTemplate_explain" version_id="1" version_string="1.0"><![CDATA[اختر كيفية عرض الصفحات أفقيا أو عموديا]]></phrase>
+    <phrase title="option_showMembers" version_id="1" version_string="1.0"><![CDATA[عرض أكثر الأعضاء مشاركة ؟]]></phrase>
+    <phrase title="option_showMembers_explain" version_id="1" version_string="1.0"><![CDATA[لعرض عرض أكثر الأعضاء مشاركة بالشريط الجانبي للصفحات، يتطلب تفعيل عرض الشريط الجانبي.
+<br />
+للعلم أنه يضيف 1 إستعلام]]></phrase>
+    <phrase title="option_showSide" version_id="1" version_string="1.0"><![CDATA[عرض الشريط الجانبي]]></phrase>
+    <phrase title="option_showSide_explain" version_id="1" version_string="1.0"><![CDATA[لعرض الشريط الجانبي بكافة الصفحات فعل هذا الخيار]]></phrase>
+    <phrase title="option_showThreads" version_id="1" version_string="1.0"><![CDATA[عرض آخر المشاركات ؟]]></phrase>
+    <phrase title="option_showThreads_explain" version_id="1" version_string="1.0"><![CDATA[لعرض آخر المشاركات بالشريط الجانبي للصفحات، يتطلب تفعيل عرض الشريط الجانبي.
+<br />
+للعلم أنه يضيف 1 إستعلام]]></phrase>
+    <phrase title="option_tabPosition" version_id="1" version_string="1.0"><![CDATA[مكان ظهور التبويب]]></phrase>
+    <phrase title="option_tabPosition_explain" version_id="1" version_string="1.0"><![CDATA[يمكنك عرض تبويب صفحاتي الموجود بالناف بار بثلاث أماكن مختلفة]]></phrase>
+    <phrase title="option_tabTitle" version_id="1" version_string="1.0"><![CDATA[عنوان التبويب]]></phrase>
+    <phrase title="option_tabTitle_explain" version_id="1" version_string="1.0"><![CDATA[إختر الاسم الذي تريد للتبويب أن يظهر به.]]></phrase>
+    <phrase title="viewing_my_page" version_id="1" version_string="1.0"><![CDATA[يشاهد:]]></phrase>
+  </phrases>
+  <route_prefixes>
+    <route_type type="admin">
+      <prefix original_prefix="my-pages" class="Mypages_Route_PrefixAdmin_MyPages" build_link="data_only"/>
+    </route_type>
+    <route_type type="public">
+      <prefix original_prefix="mypages" class="Mypages_Route_Prefix_MyPages" build_link="data_only"/>
+    </route_type>
+  </route_prefixes>
+  <style_properties/>
+  <templates>
+    <template title="mypageLinks" version_id="1" version_string="1.0"><![CDATA[
+<ul class="secondaryContent blockLinksList">
+	<xen:foreach loop="$pages" value="$page">
+		<li><a href="{xen:link mypages, $page}">{$page.title}</a></li>
+	</xen:foreach>
+</ul>]]></template>
+    <template title="mypages_Hwrapper" version_id="1" version_string="1.0"><![CDATA[<xen:require css="member_list.css" />
+<xen:require css="xenforo_member_list_item.css" />
+	
+<ul class="tabs">
+	<li class="{xen:if '{$selected} == "mypages"', active}"><a href="{xen:link mypages}">{$xenOptions.menuTitle}</a></li>	
+	<xen:foreach loop="$pages" value="$page">
+	<li class="{xen:if '{$selected} == {$page.page_name}', active}">
+		<a href="{xen:link mypages, $page, 'selected={$page.page_name}'}">{$page.title}</a>
+	</li>
+	</xen:foreach>
+</ul>
+
+<div class="section">
+	<ol class="memberList">
+		<xen:comment>هنا تظهر المسارات الفرعية</xen:comment>	
+		
+			<div>{xen:raw $_subView}</div>
+	</ol>
+</div>
+
+<xen:if is="{$xenOptions.showSide}">
+<xen:sidebar>
+
+<xen:if is="{$activeUsers} AND {$xenOptions.showMembers}">
+<div class="section activeMembers">
+		<div class="secondaryContent avatarHeap">
+			<h3>{xen:phrase highest_posting_members}</h3>
+			
+			<ol>
+				<xen:foreach loop="$activeUsers" value="$user">
+					<li><xen:avatar user="$user" size="s" text="{$user.username} ({xen:number $user.message_count})" class="Tooltip" title="{$user.username}, {xen:phrase messages}: {xen:number $user.message_count}" /></li>
+				</xen:foreach>
+			</ol>
+		</div>
+	</div>
+</xen:if>	
+
+<xen:if is="{$threads} AND {$xenOptions.showThreads}">
+<div class="section"> 
+            <div class="secondaryContent avatarList"> 
+                <h3>{xen:phrase new_messages}</h3>
+<xen:foreach loop="$threads" value="$thr"><ul>
+<li><xen:avatar user="$thr" size="s" img="true" /> 
+<a href="{xen:link threads, $thr}" title="{$thr.node_title}" class="Tooltip">{xen:helper threadPrefix, $thr} - {xen:helper snippet, $thr.threadtitle, 20}</a>
+<div class="userTitle">
+<xen:datetime time="{$thr.post_date}" />
+{xen:phrase replies}:{xen:number $thr.reply_count}
+{xen:phrase views}: {xen:number $thr.view_count} 
+&nbsp;<a href="{xen:link threads/unread, $thr}" title="{xen:phrase go_to_first_unread_message}">&#8595;</a>
+</div>     
+</li></ul></xen:foreach>
+            </div> 
+        </div> 
+</xen:if>
+	
+</xen:sidebar>
+</xen:if>]]></template>
+    <template title="mypages_index" version_id="1" version_string="1.0"><![CDATA[<xen:title>{$xenOptions.tabTitle}</xen:title>
+
+<div class="baseHtml">
+	<xen:foreach loop="$pages" value="$page">
+		<dl>
+			<xen:if is="{$xenOptions.selectTemplate} == 'mypages_Hwrapper'">
+			<dt><a href="{xen:link mypages, $page, 'selected={$page.page_name}'}">{$page.title}</a></dt>
+			<xen:else />
+			<dt><a href="{xen:link mypages, $page}">{$page.title}</a></dt>
+			</xen:if>
+			<dd>{$page.description}</dd>
+		</dl>
+	</xen:foreach>
+</div>]]></template>
+    <template title="mypages_wrapper" version_id="1" version_string="1.0"><![CDATA[<xen:require css="help_wrapper.css" />
+<xen:edithint template="navigation_sidebar.css" />
+
+<div class="container">
+	<div class="navigationSideBar ToggleTriggerAnchor">
+		<h4 class="heading ToggleTrigger" data-target="> ul">{$xenOptions.menuTitle} <span></span></h4>
+		<ul data-toggle-class="menuVisible">
+			<li class="section">
+				<ul>
+					<xen:foreach loop="$pages" value="$page">
+						<li><a href="{xen:link mypages, $page}" class="{xen:if "{$selected} == {$page.page_name}", 'secondaryContent', 'primaryContent'}">{$page.title}</a></li>
+					</xen:foreach>
+				</ul>
+			</li>
+		</ul>
+	</div>
+	
+	<div class="mainContentBlock section sectionMain">{xen:raw $_subView}</div>
+</div>
+<xen:if is="{$xenOptions.showSide}">
+<xen:sidebar>
+
+<xen:if is="{$activeUsers} AND {$xenOptions.showMembers}">
+<div class="section activeMembers">
+		<div class="secondaryContent avatarHeap">
+			<h3>{xen:phrase highest_posting_members}</h3>
+			
+			<ol>
+				<xen:foreach loop="$activeUsers" value="$user">
+					<li><xen:avatar user="$user" size="s" text="{$user.username} ({xen:number $user.message_count})" class="Tooltip" title="{$user.username}, {xen:phrase messages}: {xen:number $user.message_count}" /></li>
+				</xen:foreach>
+			</ol>
+		</div>
+	</div>
+</xen:if>	
+
+<xen:if is="{$threads} AND {$xenOptions.showThreads}">
+<div class="section"> 
+            <div class="secondaryContent avatarList"> 
+                <h3>{xen:phrase new_messages}</h3>
+<xen:foreach loop="$threads" value="$thr"><ul>
+<li><xen:avatar user="$thr" size="s" img="true" /> 
+<a href="{xen:link threads, $thr}" title="{$thr.node_title}" class="Tooltip">{xen:helper threadPrefix, $thr} - {xen:helper snippet, $thr.threadtitle, 20}</a>
+<div class="userTitle">
+<xen:datetime time="{$thr.post_date}" />
+{xen:phrase replies}:{xen:number $thr.reply_count}
+{xen:phrase views}: {xen:number $thr.view_count} 
+&nbsp;<a href="{xen:link threads/unread, $thr}" title="{xen:phrase go_to_first_unread_message}">&#8595;</a>
+</div>     
+</li></ul></xen:foreach>
+            </div> 
+        </div> 
+</xen:if>
+	
+</xen:sidebar>
+</xen:if>]]></template>
+    <template title="my_page" version_id="1" version_string="1.0"><![CDATA[<xen:title>{$page.title}</xen:title>
+
+<xen:container var="$head.canonical">
+	<link rel="canonical" href="{xen:link 'canonical:mypages', $page}" /></xen:container>
+
+
+	
+<div class="baseHtml">
+{xen:raw $templateHtml}
+</div>]]></template>
+  </templates>
+  <public_template_modifications/>
+  <bb_code_media_sites/>
+  <bb_codes/>
+</addon>
