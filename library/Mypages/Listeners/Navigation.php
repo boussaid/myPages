@@ -14,4 +14,20 @@ class Mypages_Listeners_Navigation
 				'position'      => $options->tabPosition
 			);
 		}
+
+	public static function extendViewPublicMyPage($class, array &$extend)
+	{
+		if($class == 'Mypages_ViewPublic_MyPages')
+		{
+			$extend[] = 'Mypages_ViewPublic_Pages';
+		}	
+	}
+
+	public static function extendViewAdminMyPage($class, array &$extend)
+	{
+		if($class == 'Mypages_ViewAdmin_MyPages_Edit')
+		{
+			$extend[] = 'Mypages_ViewAdmin_MyPage';
+		}	
+	}
 }

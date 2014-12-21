@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<addon addon_id="myPages" title="صفحاتي" version_string="1.0" version_id="1" url="http://www.shababadrar.net/vb/" install_callback_class="Mypages_Setup" install_callback_method="install" uninstall_callback_class="Mypages_Setup" uninstall_callback_method="uninstall">
+<addon addon_id="myPages" title="صفحاتي" version_string="2.0" version_id="2" url="http://www.shababadrar.net/vb/" install_callback_class="Mypages_Setup" install_callback_method="install" uninstall_callback_class="Mypages_Setup" uninstall_callback_method="uninstall">
   <admin_navigation>
     <navigation navigation_id="myPages" parent_navigation_id="mypageshr" display_order="10" link="my-pages" admin_permission_id="mypages" debug_only="0" hide_no_children="0"/>
     <navigation navigation_id="myPagesOptions" parent_navigation_id="mypageshr" display_order="20" link="options/list/myPages" admin_permission_id="mypages" debug_only="0" hide_no_children="0"/>
@@ -24,6 +24,11 @@
 		</xen:comment>
 </xen:html>	
 </xen:checkboxunit>]]></template>
+    <template title="my_Page_config"><![CDATA[
+	<dl class="ctrlUnit OptOut">
+		<dt><label for="ctrl_about">{xen:phrase use_editor}:</label> <dfn>{xen:phrase you_may_use_bb_code}</dfn></dt>
+		<dd>{xen:raw $myPageEditor}</dd>
+	</dl>]]></template>
     <template title="my_page_delete"><![CDATA[<xen:title>{xen:phrase please_confirm_that_you_want_to_delete_following_page}: {$site.site_title}</xen:title>
 <xen:h1>{xen:phrase confirm_deletion_of_page}</xen:h1>
 
@@ -48,10 +53,7 @@
 	</xen:navigation>
 </xen:if>
 
-<xen:form action="{xen:adminlink 'my-pages/save', $page}"
-	class="AutoValidator"
-	data-redirect="yes"
->
+<xen:form action="{xen:adminlink 'my-pages/save', $page}" class="AutoValidator" 	data-redirect="yes">
 	
 	<xen:textboxunit name="title" value="{$title}" label="{xen:phrase title}:" data-livetitletemplate="{xen:if {$page.page_id},
 		'{xen:phrase edit_page}: <em>%s</em>',
@@ -64,12 +66,18 @@
 		<xen:explain>{xen:phrase mypages_part_identify_page}</xen:explain>
 	</xen:textboxunit>
 
-	<xen:spinboxunit label="{xen:phrase display_order}:" name="display_order" value="{$page.display_order}" min="0" step="1" />
-
+	<xen:spinboxunit label="{xen:phrase display_order}:" name="display_order" value="{$page.display_order}" size="5" min="0" step="1" />
+	
+	<xen:checkboxunit label="">
+		<xen:option name="active" value="1" selected="{$page.active}">{xen:phrase enabled}</xen:option>
+	</xen:checkboxunit>
+	<xen:if is="!{$xenOptions.useEditor}">
 	<xen:textboxunit name="content" value="{$template.template}" label="{xen:phrase page_content}:" hint="{xen:phrase you_may_use_html}" code="true" rows="10" inputclass="Elastic OptOut">
 		<xen:explain>{xen:phrase you_may_use_xenforo_template_syntax_here}</xen:explain>
 	</xen:textboxunit>
-				
+	<xen:else />
+	<xen:include template="my_Page_config" />
+	</xen:if>			
 	<xen:require css="code_event.css" />
 	<xen:controlunit label="{xen:phrase php_callback}:">
 		<xen:textbox placeholder="{xen:phrase class}" name="callback_class" value="{$page.callback_class}" size="25" maxlength="75" />
@@ -95,24 +103,34 @@
 <xen:require css="filter_list.css" />
 <xen:require js="js/xenforo/filter_list.js" />
 
-<xen:form action="{xen:adminlink my-pages}" class="section AutoValidator">
+<xen:form action="{xen:adminlink my-pages/toggle}" class="section AutoValidator">
 	
 	<xen:if is="{$pages}">
-	
 		<h2 class="subHeading">
 			<xen:include template="filter_list_controls" />
 			{xen:phrase my_pages}
 		</h2>
 
 		<ol class="FilterList">
-		<xen:foreach loop="$pages" value="$page">
-			<xen:listitem
-				id="{$page.page_id}"
+		<xen:foreach loop="$pages" key="$pageId" value="$page">
+			<xen:listitem id="{$page.page_id}"
 				label="{$page.title}"
+					snippet="{$page.description}"
 				href="{xen:adminlink my-pages/edit, $page}"
-				snippet="{$page.description}"
+				tooltip="{$page.page_name}"
+			toggle="{$page.active}"
+							toggletitle="{xen:phrase enable_disable_x, 'title={$page.title}'}"
 				delete="{xen:adminlink my-pages/delete, $page}"
-			/>
+				deletehint="{xen:phrase uninstall}">
+						<xen:popup title="{xen:phrase controls}" ctrlclass="toolsCtrl">
+						<xen:comment>
+						<xen:link href="{xen:adminlink 'my-pages/disable', $page, '_xfToken={$visitor.csrf_token_page}'}" displayif="{$page.active}">{xen:phrase disable}</xen:link>
+						<xen:link href="{xen:adminlink 'my-pages/enable', $page, '_xfToken={$visitor.csrf_token_page}'}" displayif="!{$page.active}">{xen:phrase enable}</xen:link>
+			</xen:comment>			
+						<xen:link href="{xen:adminlink 'my-pages/delete', $page}">{xen:phrase delete}</xen:link>
+						<xen:link href="{xen:adminlink 'my-pages/edit', $page}">{xen:phrase edit}</xen:link>
+					</xen:popup>
+				</xen:listitem>
 		</xen:foreach>
 		</ol>
 	
@@ -122,11 +140,19 @@
 		<div class="noResults">{xen:phrase no_items_have_been_created_yet}</div>
 	</xen:if>
 	
-</xen:form>]]></template>
+</xen:form>
+<span style="text-align: center"><xen:include template="about_mypages" /></span>]]></template>
   </admin_templates>
-  <admin_template_modifications/>
+  <admin_template_modifications>
+    <modification template="editor" modification_key="extra_class" description="" execution_order="10" enabled="1" action="preg_replace">
+      <find><![CDATA[#class="textCtrl MessageEditor[^"]*(?<!{\$editorOptions\.extraClass})(?=")#i]]></find>
+      <replace><![CDATA[$0 {$editorOptions.extraClass}]]></replace>
+    </modification>
+  </admin_template_modifications>
   <code_events/>
   <code_event_listeners>
+    <listener event_id="load_class_view" execute_order="10" callback_class="Mypages_Listeners_Navigation" callback_method="extendViewAdminMyPage" active="1" hint="Mypages_ViewAdmin_MyPages_Edit" description="Redactor for My Pages"/>
+    <listener event_id="load_class_view" execute_order="10" callback_class="Mypages_Listeners_Navigation" callback_method="extendViewPublicMyPage" active="1" hint="Mypages_ViewPublic_MyPages" description="Allow Bb Codes in My pages"/>
     <listener event_id="navigation_tabs" execute_order="10" callback_class="Mypages_Listeners_Navigation" callback_method="getTabs" active="1" hint="" description=""/>
   </code_event_listeners>
   <cron/>
@@ -144,32 +170,44 @@
       <default_value>المحتويات</default_value>
       <edit_format_params>size=30</edit_format_params>
       <sub_options></sub_options>
-      <relation group_id="myPages" display_order="100"/>
+      <relation group_id="myPages" display_order="50"/>
     </option>
     <option option_id="selectTemplate" edit_format="radio" data_type="string" can_backup="1">
       <default_value>mypages_wrapper</default_value>
       <edit_format_params>mypages_wrapper=صفحات بقائمة عمودية
 mypages_Hwrapper=صفحات بقائمة أفقية</edit_format_params>
       <sub_options></sub_options>
-      <relation group_id="myPages" display_order="200"/>
+      <relation group_id="myPages" display_order="400"/>
     </option>
     <option option_id="showMembers" edit_format="onoff" data_type="boolean" can_backup="1">
       <default_value>0</default_value>
       <edit_format_params></edit_format_params>
       <sub_options></sub_options>
-      <relation group_id="myPages" display_order="130"/>
+      <relation group_id="myPages" display_order="330"/>
+    </option>
+    <option option_id="showOnline" edit_format="onoff" data_type="boolean" can_backup="1">
+      <default_value>0</default_value>
+      <edit_format_params></edit_format_params>
+      <sub_options></sub_options>
+      <relation group_id="myPages" display_order="350"/>
+    </option>
+    <option option_id="showProfiles" edit_format="onoff" data_type="boolean" can_backup="1">
+      <default_value>0</default_value>
+      <edit_format_params></edit_format_params>
+      <sub_options></sub_options>
+      <relation group_id="myPages" display_order="340"/>
     </option>
     <option option_id="showSide" edit_format="onoff" data_type="boolean" can_backup="1">
       <default_value>0</default_value>
       <edit_format_params></edit_format_params>
       <sub_options></sub_options>
-      <relation group_id="myPages" display_order="110"/>
+      <relation group_id="myPages" display_order="310"/>
     </option>
     <option option_id="showThreads" edit_format="onoff" data_type="boolean" can_backup="1">
       <default_value>0</default_value>
       <edit_format_params></edit_format_params>
       <sub_options></sub_options>
-      <relation group_id="myPages" display_order="120"/>
+      <relation group_id="myPages" display_order="320"/>
     </option>
     <option option_id="tabPosition" edit_format="select" data_type="string" can_backup="1">
       <default_value>home</default_value>
@@ -185,6 +223,18 @@ end=النهاية</edit_format_params>
       <sub_options></sub_options>
       <relation group_id="myPages" display_order="1"/>
     </option>
+    <option option_id="useEditor" edit_format="onoff" data_type="boolean" can_backup="1">
+      <default_value>1</default_value>
+      <edit_format_params></edit_format_params>
+      <sub_options></sub_options>
+      <relation group_id="myPages" display_order="100"/>
+    </option>
+    <option option_id="useParseBbcode" edit_format="onoff" data_type="boolean" can_backup="1">
+      <default_value>1</default_value>
+      <edit_format_params></edit_format_params>
+      <sub_options></sub_options>
+      <relation group_id="myPages" display_order="110"/>
+    </option>
   </optiongroups>
   <permissions>
     <permission_groups/>
@@ -196,9 +246,10 @@ end=النهاية</edit_format_params>
     <phrase title="admin_navigation_mypageshr" version_id="1" version_string="1.0"><![CDATA[صفحات مخصصة]]></phrase>
     <phrase title="admin_navigation_myPagesOptions" version_id="1" version_string="1.0"><![CDATA[خيارات صفحاتي]]></phrase>
     <phrase title="admin_permission_mypages" version_id="1" version_string="1.0"><![CDATA[إدارة صفحاتي]]></phrase>
+    <phrase title="export_selected_pages" version_id="1" version_string="1.0"><![CDATA[تصدير الصفحات المختارة]]></phrase>
     <phrase title="mypages_part_identify_page" version_id="1" version_string="1.0"><![CDATA[حدد الجزء الفريد للرابط الخاص بالصفحة و الذي يأتي بعد الرابط الرئيسي لصفحاتي.
 <br />
-لا تستخدم حروف عربية، يمكنك استخدام a-z, 0-9, _ و - و حروف فقط.]]></phrase>
+لا تستخدم حروف عربية، يمكنك استخدام a-z و 0-9، _ و - فقط.]]></phrase>
     <phrase title="my_pages" version_id="1" version_string="1.0"><![CDATA[صفحاتي]]></phrase>
     <phrase title="option_abouteme" version_id="1" version_string="1.0"><![CDATA[حول الهاك]]></phrase>
     <phrase title="option_abouteme_explain" version_id="1" version_string="1.0"><![CDATA[]]></phrase>
@@ -209,7 +260,15 @@ end=النهاية</edit_format_params>
     <phrase title="option_selectTemplate" version_id="1" version_string="1.0"><![CDATA[طريقة العرض]]></phrase>
     <phrase title="option_selectTemplate_explain" version_id="1" version_string="1.0"><![CDATA[اختر كيفية عرض الصفحات أفقيا أو عموديا]]></phrase>
     <phrase title="option_showMembers" version_id="1" version_string="1.0"><![CDATA[عرض أكثر الأعضاء مشاركة ؟]]></phrase>
-    <phrase title="option_showMembers_explain" version_id="1" version_string="1.0"><![CDATA[لعرض عرض أكثر الأعضاء مشاركة بالشريط الجانبي للصفحات، يتطلب تفعيل عرض الشريط الجانبي.
+    <phrase title="option_showMembers_explain" version_id="2" version_string="2.0"><![CDATA[لعرض أكثر الأعضاء مشاركة بالشريط الجانبي للصفحات، يتطلب تفعيل عرض الشريط الجانبي.
+<br />
+للعلم أنه يضيف 1 إستعلام]]></phrase>
+    <phrase title="option_showOnline" version_id="2" version_string="2.0"><![CDATA[عرض المتصلون الآن ؟]]></phrase>
+    <phrase title="option_showOnline_explain" version_id="2" version_string="2.0"><![CDATA[لعرض المتصلون الآن بالشريط الجانبي للصفحات، يتطلب تفعيل عرض الشريط الجانبي.
+<br />
+للعلم أنه يضيف 1 إستعلام]]></phrase>
+    <phrase title="option_showProfiles" version_id="2" version_string="2.0"><![CDATA[عرض آخر مشاركات الملف الشخصي؟]]></phrase>
+    <phrase title="option_showProfiles_explain" version_id="2" version_string="2.0"><![CDATA[لعرض آخر مشاركات الملف الشخصي بالشريط الجانبي للصفحات، يتطلب تفعيل عرض الشريط الجانبي.
 <br />
 للعلم أنه يضيف 1 إستعلام]]></phrase>
     <phrase title="option_showSide" version_id="1" version_string="1.0"><![CDATA[عرض الشريط الجانبي]]></phrase>
@@ -222,6 +281,13 @@ end=النهاية</edit_format_params>
     <phrase title="option_tabPosition_explain" version_id="1" version_string="1.0"><![CDATA[يمكنك عرض تبويب صفحاتي الموجود بالناف بار بثلاث أماكن مختلفة]]></phrase>
     <phrase title="option_tabTitle" version_id="1" version_string="1.0"><![CDATA[عنوان التبويب]]></phrase>
     <phrase title="option_tabTitle_explain" version_id="1" version_string="1.0"><![CDATA[إختر الاسم الذي تريد للتبويب أن يظهر به.]]></phrase>
+    <phrase title="option_useEditor" version_id="1" version_string="1.0"><![CDATA[تفعيل المحرر]]></phrase>
+    <phrase title="option_useEditor_explain" version_id="1" version_string="1.0"><![CDATA[إختر كيف تريد تحرير صفحاتك ... بنظام قوالب XenForo و باستخدام HTML، أو باستخدام المحرر لتنسيق النصوص و الصور]]></phrase>
+    <phrase title="option_useParseBbcode" version_id="1" version_string="1.0"><![CDATA[تمكين وسوم الـ Bbcodes المفعلة بالمنتدى]]></phrase>
+    <phrase title="option_useParseBbcode_explain" version_id="1" version_string="1.0"><![CDATA[تمكين وسوم Bbcodes الخاصة بمحرر المنتدى]]></phrase>
+    <phrase title="please_provide_valid_my_page_xml_file" version_id="1" version_string="1.0"><![CDATA[الرجاء تقديم ملف XML صالح.]]></phrase>
+    <phrase title="requested_my_page_not_found" version_id="1" version_string="1.0"><![CDATA[لا يمكن العثور على الصفحة المطلوبة]]></phrase>
+    <phrase title="use_editor" version_id="1" version_string="1.0"><![CDATA[إستخدم المحرر]]></phrase>
     <phrase title="viewing_my_page" version_id="1" version_string="1.0"><![CDATA[يشاهد:]]></phrase>
   </phrases>
   <route_prefixes>
@@ -240,7 +306,7 @@ end=النهاية</edit_format_params>
 		<li><a href="{xen:link mypages, $page}">{$page.title}</a></li>
 	</xen:foreach>
 </ul>]]></template>
-    <template title="mypages_Hwrapper" version_id="1" version_string="1.0"><![CDATA[<xen:require css="member_list.css" />
+    <template title="mypages_Hwrapper" version_id="2" version_string="2.0"><![CDATA[<xen:require css="member_list.css" />
 <xen:require css="xenforo_member_list_item.css" />
 	
 <ul class="tabs">
@@ -263,6 +329,19 @@ end=النهاية</edit_format_params>
 <xen:if is="{$xenOptions.showSide}">
 <xen:sidebar>
 
+<xen:if is="{$canViewMemberList} AND {$xenOptions.showOnline}">
+	<xen:include template="sidebar_online_users" />
+</xen:if>
+
+<xen:if is="{$profilePosts} AND {$xenOptions.showProfiles}">
+	<div class="section profilePostList">
+		<div class="secondaryContent">
+					<h3><a href="{xen:link find-new/profile-posts}">{xen:phrase new_profile_posts}</a></h3>
+					<xen:include template="sidebar_profile_post_list" />
+		</div>
+	</div>
+</xen:if>
+		
 <xen:if is="{$activeUsers} AND {$xenOptions.showMembers}">
 <div class="section activeMembers">
 		<div class="secondaryContent avatarHeap">
@@ -311,7 +390,7 @@ end=النهاية</edit_format_params>
 		</dl>
 	</xen:foreach>
 </div>]]></template>
-    <template title="mypages_wrapper" version_id="1" version_string="1.0"><![CDATA[<xen:require css="help_wrapper.css" />
+    <template title="mypages_wrapper" version_id="2" version_string="2.0"><![CDATA[<xen:require css="help_wrapper.css" />
 <xen:edithint template="navigation_sidebar.css" />
 
 <div class="container">
@@ -333,6 +412,18 @@ end=النهاية</edit_format_params>
 <xen:if is="{$xenOptions.showSide}">
 <xen:sidebar>
 
+<xen:if is="{$canViewMemberList} AND {$xenOptions.showOnline}">
+	<xen:include template="sidebar_online_users" />
+</xen:if>
+
+<xen:if is="{$profilePosts} AND {$xenOptions.showProfiles}">
+	<div class="section profilePostList">
+		<div class="secondaryContent">
+					<h3><a href="{xen:link find-new/profile-posts}">{xen:phrase new_profile_posts}</a></h3>
+					<xen:include template="sidebar_profile_post_list" />
+		</div>
+	</div>
+</xen:if>
 <xen:if is="{$activeUsers} AND {$xenOptions.showMembers}">
 <div class="section activeMembers">
 		<div class="secondaryContent avatarHeap">
@@ -377,8 +468,81 @@ end=النهاية</edit_format_params>
 <div class="baseHtml">
 {xen:raw $templateHtml}
 </div>]]></template>
+    <template title="pke_base.css" version_id="1" version_string="1.0"><![CDATA[/*
+YUI 3.18.0 (build 790466e)
+Copyright 2014 Yahoo! Inc. All rights reserved.
+Licensed under the BSD License.
+http://yuilibrary.com/license/
+*/
+
+.pke_base h1 {
+	font-size:138.5%;
+}
+.pke_base h2 {
+	font-size:123.1%;
+}
+.pke_base h3 {
+	font-size:108%;
+}
+.pke_base h1, .pke_base h2, .pke_base h3 {
+	margin:1em 0;
+}
+.pke_base h1, .pke_base h2, .pke_base h3, .pke_base h4, .pke_base h5, .pke_base h6, .pke_base strong {
+	font-weight:bold;
+}
+.pke_base abbr, .pke_base acronym {
+	border-bottom:1px dotted #000;
+	cursor:help;
+}
+.pke_base em {
+	font-style:italic;
+}
+.pke_base blockquote, .pke_base ul, .pke_base ol, .pke_base dl {
+	margin:1em;
+}
+.pke_base ol, .pke_base ul, .pke_base dl {
+	margin-left:2em;
+}
+.pke_base ol {
+	list-style: decimal outside;
+}
+.pke_base ul {
+	list-style: disc outside;
+}
+.pke_base dd {
+	margin-left:1em;
+}
+.pke_base th, .pke_base td {
+	border:1px solid #000;
+	padding:.5em;
+}
+.pke_base th {
+	font-weight:bold;
+	text-align:center;
+}
+.pke_base caption {
+	margin-bottom:.5em;
+	text-align:center;
+}
+.pke_base p, .pke_base fieldset, .pke_base table, .pke_base pre {
+	margin-bottom:1em;
+}
+
+.pke_base input[type=text], .pke_base input[type=password], .pke_base textarea{width:12.25em;*width:11.9em;}]]></template>
   </templates>
-  <public_template_modifications/>
+  <public_template_modifications>
+    <modification template="editor_contents.css" modification_key="page_redactor_html" description="Html mode for redactor" execution_order="10" enabled="1" action="preg_replace">
+      <find><![CDATA[#^.*$#si]]></find>
+      <replace><![CDATA[$0
+body.html_mode p:first-child, body.html_mode div:first-child { margin: 0px 0px 1em 0px; }
+body.html_mode p,body.html_mode div { margin: 1em 0px; }]]></replace>
+    </modification>
+    <modification template="EXTRA.css" modification_key="pages_extra" description="extra css" execution_order="10" enabled="0" action="preg_replace">
+      <find><![CDATA[/^.*$/s]]></find>
+      <replace><![CDATA[$0
+<xen:include template="pke_base.css" />]]></replace>
+    </modification>
+  </public_template_modifications>
   <bb_code_media_sites/>
   <bb_codes/>
 </addon>

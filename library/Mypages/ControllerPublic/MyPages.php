@@ -25,7 +25,7 @@ class Mypages_ControllerPublic_MyPages extends XenForo_ControllerPublic_Abstract
 		}
 
 		$myPagesModel = $this->_getMyPagesModel();
-		$pages = $myPagesModel->getMyPages();
+		$pages = $myPagesModel->getActivePages();
 		$this->_pagesCache = $myPagesModel->preparePages($pages);
 		
 
@@ -49,7 +49,6 @@ class Mypages_ControllerPublic_MyPages extends XenForo_ControllerPublic_Abstract
 		$this->canonicalizeRequestUrl(XenForo_Link::buildPublicLink('mypages', $page));
 
 		$myPagesModel = $this->_getMyPagesModel();
-
 		$viewParams = array(
 			'page' => $myPagesModel->preparePage($page),
 			'templateName' => $myPagesModel->getMyPageTemplateName($page['page_id'])
@@ -107,11 +106,55 @@ class Mypages_ControllerPublic_MyPages extends XenForo_ControllerPublic_Abstract
                 'is_banned' => 0
                 );
 		$activeUsers = $userModel->getMostActiveUsers($criteria, array('limit' => 5));
+		/** Profiles Psts */
+		$visitor = XenForo_Visitor::getInstance();
+		$profilePostLimit = XenForo_Application::getOptions()->forumListNewProfilePosts;
+
+		if ($profilePostLimit && $visitor->canViewProfilePosts())
+		{
+			/** @var XenForo_Model_ProfilePost $profilePostModel */
+			$profilePostModel = $this->getModelFromCache('XenForo_Model_ProfilePost');
+			$profilePosts = $profilePostModel->getLatestProfilePosts(
+				array(
+					'deleted' => false,
+					'moderated' => false
+				), array(
+					'limit' => max($profilePostLimit * 2, 10),
+					'join' =>
+						XenForo_Model_ProfilePost::FETCH_USER_POSTER |
+						XenForo_Model_ProfilePost::FETCH_USER_RECEIVER |
+						XenForo_Model_ProfilePost::FETCH_USER_RECEIVER_PRIVACY,
+					'permissionCombinationId' => $visitor->permission_combination_id
+				)
+			);
+			foreach ($profilePosts AS $id => &$profilePost)
+			{
+				$receivingUser = $profilePostModel->getProfileUserFromProfilePost($profilePost);
+				if (!$profilePostModel->canViewProfilePostAndContainer($profilePost, $receivingUser))
+				{
+					unset($profilePosts[$id]);
+				}
+
+				$profilePost = $profilePostModel->prepareProfilePost($profilePost, $receivingUser);
+				if (!empty($profilePost['isIgnored']))
+				{
+					unset($profilePosts[$id]);
+				}
+			}
+			$profilePosts = array_slice($profilePosts, 0, $profilePostLimit, true);
+		}
+		else
+		{
+			$profilePosts = array();
+		}
 
 		$viewParams = array(
 			'selected' => $selected,
 			'threads' => $threads,
 			'activeUsers' => $activeUsers,
+			'onlineUsers' => $this->_getSessionActivityList(),
+			'canViewMemberList' => $this->getModelFromCache('XenForo_Model_User')->canViewMemberList(),
+			'profilePosts' => $profilePosts,
 			'pages' => $pages
 		);
 		}
@@ -128,6 +171,21 @@ class Mypages_ControllerPublic_MyPages extends XenForo_ControllerPublic_Abstract
 		$wrapper->subView = $subView;
 
 		return $wrapper;
+	}
+
+	protected function _getSessionActivityList()
+	{
+		$visitor = XenForo_Visitor::getInstance();
+
+		/** @var $sessionModel XenForo_Model_Session */
+		$sessionModel = $this->getModelFromCache('XenForo_Model_Session');
+
+		return $sessionModel->getSessionActivityQuickList(
+			$visitor->toArray(),
+			array('cutOff' => array('>', $sessionModel->getOnlineStatusTimeout())),
+			($visitor['user_id'] ? $visitor->toArray() : null)
+		);
+
 	}
 
 	protected function _assertViewingPermissions($action)

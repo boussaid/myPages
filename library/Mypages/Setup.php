@@ -50,6 +50,7 @@ class Mypages_Setup
         `page_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
         `page_name` varchar(50) NOT NULL,
         `display_order` int(10) unsigned NOT NULL DEFAULT '0',
+        `active` tinyint(3) unsigned NOT NULL DEFAULT '1',
         `callback_class` varchar(75) NOT NULL DEFAULT '',
         `callback_method` varchar(75) NOT NULL DEFAULT '',
         PRIMARY KEY (`page_id`),

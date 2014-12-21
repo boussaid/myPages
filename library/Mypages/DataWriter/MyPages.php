@@ -23,15 +23,16 @@ class Mypages_DataWriter_MyPages extends XenForo_DataWriter
 	protected function _getFields()
 	{
 		return array(
-			'xf_my_pages' => array(
-				'page_id' => array('type' => self::TYPE_UINT, 'autoIncrement' => true),
+			'xf_my_pages' 	=> array(
+				'page_id' 	=> array('type' => self::TYPE_UINT, 'autoIncrement' => true),
 				'page_name' => array('type' => self::TYPE_STRING, 'required' => true, 'maxLength' => 50,
-					'verification' => array('$this', '_verifyPageName'),
+					'verification' 	=> array('$this', '_verifyPageName'),
 					'requiredError' => 'please_enter_valid_url_portion'
 				),
-				'display_order' => array('type' => self::TYPE_UINT, 'default' => 1),
-				'callback_class' => array('type' => self::TYPE_STRING, 'default' => ''),
-				'callback_method' => array('type' => self::TYPE_STRING, 'default' =>'')
+				'display_order' 	=> array('type' => self::TYPE_UINT, 'default' => 1),
+				'active'            => array('type' => self::TYPE_BOOLEAN, 'default' => 1),
+				'callback_class' 	=> array('type' => self::TYPE_STRING, 'default' => ''),
+				'callback_method' 	=> array('type' => self::TYPE_STRING, 'default' =>'')
 			)
 		);
 	}
